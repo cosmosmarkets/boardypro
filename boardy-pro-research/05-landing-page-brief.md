@@ -4,35 +4,38 @@ This is the working brief for the Pro landing page. Status: brainstorming, not y
 
 ## The big idea
 
-**Connector → Closer.** Free Boardy makes the intro. Pro makes the deal happen. The whole page is one transformation, told in Boardy's voice, with a **golden Boardy** as the visual signal of the premium tier.
+**Connector → Closer.** Free Boardy makes the intro. Pro makes the deal happen. The whole page is one transformation, told in Boardy's voice, with a **brushed-brass Boardy** as the visual signal of the premium tier.
 
 ## Visual direction
 
 - **Golden / brass Boardy character** as the hero. Gold = the upgrade. It signals "premium" without the page ever saying the word.
-- **Dark, near-black background** in the hero. Non-negotiable if going gold: gold glows on dark and dies on light. A peach/orange-heavy background will mute the gold back into plain orange.
-- **Warm peach floor-glow** at the base of the hero (echoes the current boardy.ai site) to keep brand continuity without flooding the gold.
-- **Oversized "PRO" display word** behind/around the character (as in the current hero mockup).
-- Keep the **cardboard-box-head** silhouette intact. It's the recognizable asset. Just render it in gold.
+- **Cool, near-black background** in the hero. Non-negotiable with brass: it glows on a cool dark stage and dies on light or warm backgrounds. A peach/orange-heavy background would mute the brass back into plain orange.
+- **Warm-white spotlight + the arc** at the base of the hero. A shallow convex horizon (the arc) with a crisp edge and a thin brass keyline, with a warm-white (not peach) spotlight glowing behind Boardy so he reads as standing center-stage in light. This replaces the old peach floor-glow. See [06-hero-spec.md](06-hero-spec.md) section 5b.
+- **Oversized "PRO" display word** behind/around the character (as in the current hero mockup), forged in the same brass.
+- Keep the **cardboard-box-head** silhouette intact. It's the recognizable asset. Just render it in brushed brass.
 
 ## Brand continuity cues (from the live site)
 
-- Black backgrounds, orange/peach gradient accents, big bold display type.
+- Black backgrounds, big bold display type, the cardboard-box character.
 - First-person, personified copy and CTAs ("Message Me", not "Sign Up").
 - Casual, cheeky, warm tone throughout.
+- **Deliberate Pro departure:** the live site uses orange/peach accents. Pro trades those for cool-dark + brushed brass + a warm-white spotlight. The brass is the premium signal, so the palette shift is intentional, not an inconsistency.
 
 ## Proposed section flow
 
-1. **Hero** (the existing mockup)
-   - Golden Boardy, giant "PRO", dark bg, peach floor-glow.
-   - Headline: "I'm done making intros. Now I make deals happen." (or a variant from 03-voice-and-copy.md)
+1. **Hero** (the existing mockup, fully spec'd in [06-hero-spec.md](06-hero-spec.md))
+   - Brass Boardy, giant "PRO", cool-dark bg, warm-white spotlight arc with brass keyline.
+   - Headline: "I'm done making intros. Now I make deals happen."
    - Subhead: from first signal to signed, Boardy runs the whole play.
-   - CTA: "Talk to Boardy" / "Message Me", with $100/mo visible nearby.
+   - CTA: inline phone field + "Talk to Boardy", with "Free for your first year." beneath.
 
-2. **Proof bar** (instant credibility, launch numbers)
-   - 1M+ views · 20K+ comments · 5,000 spots gone in 2 hours · $0 in ads.
+2. **Proof bar** (platform scale, teeing up Pro)
+   - 166K+ people spoken with · 110K+ intros made · $63B+ capital introduced · 17h avg match.
+   - Kicker in voice: "And that was just me making the intros. Now I stick around to close them."
+   - (Launch-velocity numbers, 1M views / 5,000 spots in 2hrs / $0 ads, move to a later proof section.)
 
 3. **Intros → Deals transformation**
-   - The core concept, given room. Before/after or split: old Boardy stops at the handshake, gold Boardy walks it to close.
+   - The core concept, given room. Before/after or split: old Boardy stops at the handshake, brass Boardy walks it to close.
 
 4. **How Pro works (the pipeline)**
    - Horizontal timeline, 4-5 steps, each written as Boardy speaking:
@@ -47,8 +50,8 @@ This is the working brief for the Pro landing page. Status: brainstorming, not y
 7. **The story / founder credibility** (optional, sincere beat)
    - Built by the Clearco founder. The agent that raised its own round. Mission: AI that makes us more connected, not less.
 
-8. **Scarcity / pricing close**
-   - $100/mo, founding-member framing, restate the launch-velocity story. CTA repeats.
+8. **Pricing close (value-led)**
+   - "One closed deal pays for a decade of me." $100/mo, free first year. Founding-member-for-life demoted to a single supporting line. CTA repeats.
 
 ## Guardrails
 

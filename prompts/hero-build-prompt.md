@@ -10,9 +10,9 @@ Build the **hero section** for the Boardy Pro landing page: a brushed-brass Boar
 
 Build the hero only. Leave clean seams so the rest of the page (see `07-section-flow.md`) can be added below it later.
 
-## Tech stack (assumption, swap if the repo already has one)
+## Tech stack (decided)
 
-- **Next.js (App Router) + TypeScript + Tailwind CSS.** If the repo is empty, scaffold it. If a stack already exists, match it.
+- **Next.js (App Router) + TypeScript + Tailwind CSS.** This is the chosen stack, not a suggestion. If the repo has no app yet, scaffold it. Deploy target is Vercel.
 - Single hero component, e.g. `components/Hero.tsx`, rendered on the home route.
 - Define the design tokens as CSS variables (in `globals.css`) and/or `tailwind.config` theme extensions so the rest of the page reuses them.
 - No heavy animation libraries needed. Plain CSS keyframes and transitions are enough. Framer Motion is acceptable if it stays lightweight.

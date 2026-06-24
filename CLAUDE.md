@@ -17,6 +17,7 @@ The core story the whole page tells: **connector becomes closer.** Free Boardy m
 
 ## Locked design decisions (settled, do not re-litigate)
 
+- Tech stack: **Next.js (App Router) + TypeScript + Tailwind CSS**, deploy to Vercel. Phone field captures the number and hands off to Boardy's existing onboarding/verify flow (no backend auth in this repo).
 - Hero composition: **centered monument** (PRO huge + centered, brass Boardy through it, headline clean below).
 - Character: **brushed brass box, blue face intact**, navy suit, red tie. Asset: `golden boardy pro.png`.
 - Background: **cool near-black**, never warm or peach (warm bg mutes the brass).
@@ -31,6 +32,7 @@ The core story the whole page tells: **connector becomes closer.** Free Boardy m
 - Exact arc curvature depth and keyline weight (tune by eye against the spec ranges).
 - Whether to repeat the CTA as a sticky nav button or only hero + close.
 - Final typeface pick (spec recommends Space Grotesk or Archivo).
+- The exact endpoint/redirect the phone field hands off to (Boardy onboarding flow). Stub with a typed onSubmit for now.
 - The `$63B` capital-introduced stat is single-sourced; verify against the live boardy.ai counter before printing it.
 
 ## Real data (use these, rounded, do not invent)

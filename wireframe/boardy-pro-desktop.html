@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boardy Pro — desktop wireframe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     Boardy Pro — desktop wireframe (greyscale)
+     One horizontal node-edge graph. Scroll = travel right,
+     intro -> close. Greyscale value system only:
+       stage   = lightest      (the canvas / void)
+       potential = light dashed (a connection that could happen)
+       made    = dark solid     (a connection that happened)
+       live    = black/filled   (You + CTA, the only clickable thing)
+     ============================================================ */
+
+  :root{
+    --stage:        #e9e8e6;   /* canvas, lightest */
+    --stage-lift:   #f3f2f0;   /* faint lift behind the active cluster */
+    --ink:          #1c1c1c;   /* headlines */
+    --ink-2:        #565656;   /* body */
+    --ink-3:        #8c8c8c;   /* micro / captions */
+    --line-pot:     #cfcecb;   /* potential edge */
+    --line-made:    #4a4a4a;   /* made edge */
+    --line-made-2:  #2c2c2c;   /* made edge, strong */
+    --line-dying:   #d6d5d2;   /* dying edge */
+    --node-fill:    #f5f4f2;   /* node interior */
+    --node-rim:     #5a5a5a;   /* made node rim */
+    --node-rim-pot: #c2c1be;   /* potential node rim */
+    --live:         #131313;   /* live black */
+    --disp: 'Space Grotesk', system-ui, sans-serif;
+    --body: 'Inter', system-ui, sans-serif;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    background:var(--stage);
+    font-family:var(--body);
+    color:var(--ink);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ---- the camera viewport ---- */
+  #viewport{
+    position:fixed; inset:0;
+    overflow:hidden;
+    background:
+      radial-gradient(120% 90% at 4% 50%, var(--stage-lift) 0%, rgba(243,242,240,0) 38%),
+      radial-gradient(120% 90% at 97% 50%, var(--stage-lift) 0%, rgba(243,242,240,0) 38%),
+      var(--stage);
+    box-shadow: inset 0 0 220px rgba(0,0,0,0.05);
+    cursor:grab;
+  }
+  #viewport.dragging{ cursor:grabbing; }
+
+  #world{
+    position:absolute; top:0; left:0;
+    width:9300px; height:1100px;
+    transform-origin:top left;
+    will-change:transform;
+  }
+
+  svg#edges{ position:absolute; inset:0; pointer-events:none; }
+
+  /* ---- edge grammar ---- */
+  .e{ fill:none; }
+  .e.pot{ stroke:var(--line-pot); stroke-width:1.6; stroke-dasharray:8 9; }
+  .e.fan{ stroke:var(--line-pot); stroke-width:1.4; stroke-dasharray:7 11; opacity:.85; }
+  .e.made{ stroke:var(--line-made); stroke-width:2.2; }
+  .e.made.strong{ stroke:var(--line-made-2); stroke-width:2.8; }
+  .e.dying{ stroke:var(--line-dying); stroke-width:3; stroke-dasharray:20 16; }
+  .e.draw{ transition:stroke-dashoffset .7s cubic-bezier(.22,.61,.36,1); }
+
+  /* ---- nodes ---- */
+  .node{
+    position:absolute; transform:translate(-50%,-50%);
+    display:flex; align-items:center; justify-content:center;
+    text-align:center; border-radius:50%;
+    background:var(--node-fill); border:2px solid var(--node-rim);
+    color:var(--ink-2);
+  }
+  .lbl{ position:absolute; transform:translate(-50%,-50%); }
+
+  /* Boardy anchor */
+  .boardy{
+    position:absolute; transform:translate(-50%,-50%);
+    width:158px; height:104px; border-radius:6px;
+    border:2px solid var(--line-made-2); background:#dededc;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--disp); font-weight:600; font-size:22px; color:var(--ink);
+    letter-spacing:.5px;
+  }
+  .boardy small{ position:absolute; bottom:-26px; left:50%; transform:translateX(-50%);
+    font-family:var(--body); font-weight:500; font-size:12px; color:var(--ink-3); white-space:nowrap; }
+  .halo{ position:absolute; transform:translate(-50%,-50%); border-radius:50%;
+    width:280px; height:200px; pointer-events:none;
+    background:radial-gradient(circle, rgba(255,255,255,.85) 0%, rgba(255,255,255,0) 66%); }
+
+  /* You node, progressive light (0 = dimmest -> live) */
+  .you{ width:74px; height:74px; font-family:var(--disp); font-weight:600; font-size:14px; }
+  .you-0{ border:1.6px dashed var(--node-rim-pot); background:#fff; color:#bdbcb9; }
+  .you-1{ border:1.6px dashed #b0afac; background:#fafaf9; color:#a3a29f; }
+  .you-2{ border:2px solid #9a9996; background:#f1f0ee; color:#6f6e6b; }
+  .you-3{ border:2px solid #7c7b78; background:#eceae8; color:#5a5956; }
+  .you-4{ border:2.5px solid #4f4e4b; background:#e7e5e2; color:#3f3e3b; }
+  .you-ring{ width:78px; height:78px; border:3px solid #1f1f1f; background:#d7d6d3;
+    font-weight:700; color:var(--ink); }
+  .live{
+    width:88px; height:88px; background:var(--live); border:2px solid var(--live);
+    color:#fff; font-weight:700; cursor:pointer;
+    box-shadow:0 0 0 7px rgba(0,0,0,.08); transition:box-shadow .25s ease, transform .25s ease;
+  }
+  .live:hover{ box-shadow:0 0 0 11px rgba(0,0,0,.10); transform:translate(-50%,-50%) scale(1.04); }
+
+  /* stat / number nodes */
+  .stat{ width:132px; height:132px; flex-direction:column; gap:2px; }
+  .stat b{ font-family:var(--disp); font-weight:700; font-size:25px; color:var(--ink); letter-spacing:-.5px; }
+  .stat span{ font-size:11px; color:var(--ink-3); width:96px; line-height:1.25; }
+
+  /* pipeline steps */
+  .step{ width:94px; height:94px; font-family:var(--disp); font-weight:700; font-size:30px; color:var(--ink); }
+  .step-cap{ position:absolute; transform:translate(-50%,0); width:160px; text-align:center;
+    font-size:13px; line-height:1.35; color:var(--ink-2); }
+
+  /* differentiator target */
+  .target{ width:100px; height:100px; font-size:13px; color:var(--ink-2); border-color:var(--line-made-2); }
+
+  /* round */
+  .bignum{ position:absolute; transform:translate(-50%,-50%); font-family:var(--disp);
+    font-weight:700; font-size:66px; color:var(--ink); letter-spacing:-1.5px; }
+  .chip{ position:absolute; transform:translate(-50%,-50%); border:2px solid var(--node-rim);
+    background:#eceae8; border-radius:8px; padding:14px 18px; font-family:var(--disp);
+    font-weight:600; font-size:18px; color:var(--ink); white-space:nowrap; }
+
+  /* network ring */
+  .logo{ position:absolute; transform:translate(-50%,-50%); border:1.5px solid var(--node-rim);
+    background:#eeedea; border-radius:7px; padding:9px 14px; font-family:var(--disp);
+    font-weight:600; font-size:15px; color:var(--ink); white-space:nowrap; }
+  .archetype{ width:104px; height:104px; font-size:11.5px; line-height:1.25; padding:8px;
+    border-color:#8b8a87; background:#f0efed; color:var(--ink-2); }
+
+  /* ---- text blocks ---- */
+  .block{ position:absolute; }
+  .eyebrow{ font-family:var(--body); font-weight:600; font-size:13px; letter-spacing:2.5px;
+    text-transform:uppercase; color:var(--ink-3); }
+  h1{ font-family:var(--disp); font-weight:700; font-size:62px; line-height:1.03;
+    letter-spacing:-1.5px; color:var(--ink); }
+  .h2{ font-family:var(--disp); font-weight:700; font-size:33px; line-height:1.12;
+    letter-spacing:-.6px; color:var(--ink); }
+  .h3{ font-family:var(--disp); font-weight:600; font-size:23px; color:var(--ink); }
+  .lede{ font-family:var(--body); font-weight:400; font-size:19px; line-height:1.55; color:var(--ink-2); }
+  .body{ font-family:var(--body); font-weight:400; font-size:16px; line-height:1.55; color:var(--ink-2); }
+  .micro{ font-size:13px; color:var(--ink-3); line-height:1.5; }
+  .quote{ font-size:16px; line-height:1.5; color:var(--ink-2); border-left:3px solid #b6b5b2; padding-left:16px; }
+
+  /* phone field */
+  .field-row{ display:flex; gap:12px; align-items:stretch; }
+  .field{ flex:1; border:1.6px solid #8d8c89; background:#fff; padding:0 16px; height:54px;
+    font-family:var(--body); font-size:16px; color:var(--ink); border-radius:4px; }
+  .field::placeholder{ color:#a7a6a3; }
+  .field:focus{ outline:none; border-color:var(--live); box-shadow:0 0 0 3px rgba(0,0,0,.10); }
+  .cta{ background:var(--live); color:#fff; border:none; border-radius:4px; padding:0 26px;
+    height:54px; font-family:var(--disp); font-weight:600; font-size:16px; cursor:pointer; white-space:nowrap; }
+  .cta:hover{ background:#000; }
+  .offer{ font-family:var(--disp); font-weight:600; font-size:15px; color:var(--ink); }
+
+  /* ===================== fixed UI overlays ===================== */
+
+  /* deal-track spine, pinned to the viewport bottom */
+  #spine{ position:fixed; left:0; right:0; bottom:0; height:66px; z-index:30;
+    background:linear-gradient(0deg, rgba(233,232,230,.96) 60%, rgba(233,232,230,0)); }
+  #track{ position:absolute; left:48px; right:48px; bottom:30px; height:0; }
+  #track-base{ position:absolute; left:0; right:0; top:-1px; height:2px;
+    background-image:linear-gradient(90deg, var(--node-rim-pot) 55%, transparent 0);
+    background-size:14px 2px; background-repeat:repeat-x; }
+  #track-made{ position:absolute; left:0; top:-1.5px; height:3px; width:0; background:var(--line-made-2); }
+  .tick{ position:absolute; bottom:24px; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:9px; cursor:pointer; }
+  .tick .dot{ width:11px; height:11px; border-radius:50%; border:2px solid var(--node-rim-pot); background:var(--stage); }
+  .tick .name{ font-family:var(--disp); font-weight:600; font-size:12.5px; color:var(--ink-3);
+    white-space:nowrap; transition:color .2s ease; }
+  .tick.done .dot{ background:var(--line-made); border-color:var(--line-made); }
+  .tick.active .dot{ background:var(--live); border-color:var(--live); transform:scale(1.15); }
+  .tick.active .name{ color:var(--ink); }
+  #playhead{ position:absolute; bottom:24px; transform:translate(-50%,50%) rotate(45deg);
+    width:15px; height:15px; background:var(--live); z-index:2; }
+
+  /* docked, always-live CTA */
+  #dock{ position:fixed; right:24px; bottom:78px; z-index:31;
+    background:var(--live); color:#fff; border:none; border-radius:6px;
+    padding:13px 20px; font-family:var(--disp); font-weight:600; font-size:14.5px;
+    cursor:pointer; box-shadow:0 6px 20px rgba(0,0,0,.18); }
+  #dock:hover{ background:#000; }
+
+  /* arrival / named-destination label */
+  #arrival{ position:fixed; top:26px; left:50%; transform:translateX(-50%); z-index:30;
+    font-family:var(--disp); font-weight:600; font-size:13px; letter-spacing:3px; text-transform:uppercase;
+    color:var(--ink-3); opacity:0; transition:opacity .5s ease; pointer-events:none; }
+  #arrival.show{ opacity:1; }
+
+  /* first-paint scroll affordance */
+  #hint{ position:fixed; bottom:80px; left:50%; transform:translateX(-50%); z-index:29;
+    font-family:var(--body); font-size:13px; color:var(--ink-3);
+    display:flex; align-items:center; gap:8px; transition:opacity .5s ease; }
+  #hint.hide{ opacity:0; pointer-events:none; }
+  #hint .arrow{ display:inline-block; animation:nudge 1.6s ease-in-out infinite; }
+  @keyframes nudge{ 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(5px); } }
+
+  @media (prefers-reduced-motion: reduce){
+    .e.draw{ transition:none; }
+    #hint .arrow{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="viewport">
+  <div id="world">
+
+    <svg id="edges" width="9300" height="1100" viewBox="0 0 9300 1100">
+      <!-- Boardy's brass fan: potential edges splaying across the whole page -->
+      <g>
+        <path class="e fan" d="M250,560 C 1600,360 3400,300 4600,430"/>
+        <path class="e fan" d="M250,560 C 1600,740 3400,780 4600,560"/>
+        <path class="e fan" d="M250,560 C 1800,920 3900,940 5900,560"/>
+        <path class="e fan" d="M250,560 C 1700,430 3600,450 7200,560"/>
+        <path class="e fan" d="M250,560 C 2100,600 4600,660 8500,560"/>
+      </g>
+
+      <!-- STOP 0 Intro: first edge, Boardy -> You -->
+      <g data-stop="0">
+        <path class="e made draw" d="M250,572 C 430,660 560,772 690,832"/>
+      </g>
+
+      <!-- STOP 1 Proof: made edges drawing into the four stat-nodes -->
+      <g data-stop="1">
+        <path class="e made draw" d="M1430,520 L1840,398"/>
+        <path class="e made draw" d="M1430,520 L2140,378"/>
+        <path class="e made draw" d="M1430,520 L1872,612"/>
+        <path class="e made draw" d="M1430,520 L2172,592"/>
+        <path class="e made draw" d="M2000,832 L1880,628"/>
+      </g>
+
+      <!-- STOP 2 Pipeline: a threaded chain, left to right -->
+      <g data-stop="2">
+        <path class="e made strong draw" d="M2860,520 L3080,520 L3300,520 L3520,520 L3740,520"/>
+        <path class="e made draw" d="M3300,832 L3300,568"/>
+      </g>
+
+      <!-- STOP 3 Differentiator: the dying edge, then the revived one -->
+      <g data-stop="3">
+        <path class="e dying" d="M4600,832 C 4700,1030 4900,1000 4944,592"/>
+        <path class="e made strong draw" d="M4600,830 L4938,560"/>
+      </g>
+
+      <!-- STOP 4 $8M round: Boardy's self-loop, out and back into himself -->
+      <g data-stop="4">
+        <path class="e made strong draw" d="M5470,430 C 5820,180 6420,210 6520,470 C 6600,720 5960,770 5560,575"/>
+        <path class="e made draw" d="M5900,872 L5980,536"/>
+      </g>
+
+      <!-- STOP 5 Network: edges from the You node out to the ring -->
+      <g data-stop="5">
+        <path class="e made draw" d="M7200,540 L7200,332"/>
+        <path class="e made draw" d="M7200,540 L7452,372"/>
+        <path class="e made draw" d="M7200,540 L7556,540"/>
+        <path class="e made draw" d="M7200,540 L7452,708"/>
+        <path class="e made draw" d="M7200,540 L6948,708"/>
+        <path class="e made draw" d="M7200,540 L6844,540"/>
+        <path class="e made draw" d="M7200,540 L6948,372"/>
+        <path class="e made draw" d="M7200,540 L7316,452"/>
+        <path class="e made draw" d="M7200,540 L7084,628"/>
+        <path class="e made draw" d="M7200,540 L7356,628"/>
+      </g>
+
+      <!-- STOP 6 Close: the made graph trails left of the live node; Boardy returns -->
+      <g data-stop="6">
+        <path class="e made strong draw" d="M8156,560 C 7880,520 7560,612 7316,548"/>
+        <path class="e made strong draw" d="M8156,538 C 7820,372 7520,372 7320,452"/>
+        <path class="e made strong draw" d="M8156,582 C 7820,756 7520,724 7360,632"/>
+        <path class="e made draw" d="M8970,556 C 8720,524 8520,540 8246,558"/>
+      </g>
+    </svg>
+
+    <!-- ===================== PERSISTENT: Boardy anchor (entry) ===================== -->
+    <div class="halo" style="left:160px; top:548px;"></div>
+    <div class="boardy" style="left:160px; top:548px;">Boardy<small>the origin. every edge traces back here</small></div>
+
+    <!-- ===================== STOP 0: INTRO ===================== -->
+    <div class="block" style="left:360px; top:178px; width:820px;">
+      <h1 style="white-space:nowrap;">I'm done making intros.<br>Now I make deals happen.</h1>
+      <p class="lede" style="margin-top:26px; width:540px;">I pressure-test the fit, sit in on the calls, and chase the follow-ups so the deal actually closes. You take the win.</p>
+    </div>
+    <div class="node you you-0" style="left:700px; top:832px;">You</div>
+
+    <!-- ===================== STOP 1: PROOF ===================== -->
+    <div class="node stat" style="left:1840px; top:392px;"><b>166K+</b><span>people spoken with</span></div>
+    <div class="node stat" style="left:2140px; top:372px;"><b>110K+</b><span>introductions made</span></div>
+    <div class="node stat" style="left:1872px; top:618px;"><b>$63B+</b><span>capital introduced</span></div>
+    <div class="node stat" style="left:2172px; top:598px;"><b>17h</b><span>avg time to match</span></div>
+    <div class="block quote" style="left:1640px; top:736px; width:430px;">And that was just me making the intros. Now I stick around to close them.</div>
+    <div class="node you you-1" style="left:2000px; top:832px;">You</div>
+
+    <!-- ===================== STOP 2: PIPELINE ===================== -->
+    <div class="block h3" style="left:3300px; top:330px; transform:translateX(-50%); text-align:center;">Here's how I close.</div>
+    <div class="node step" style="left:2860px; top:520px;">1</div>
+    <div class="node step" style="left:3080px; top:520px;">2</div>
+    <div class="node step" style="left:3300px; top:520px;">3</div>
+    <div class="node step" style="left:3520px; top:520px;">4</div>
+    <div class="node step" style="left:3740px; top:520px;">5</div>
+    <div class="step-cap" style="left:2860px; top:600px;">I pressure-test the fit.</div>
+    <div class="step-cap" style="left:3080px; top:378px;">I get us in the room.</div>
+    <div class="step-cap" style="left:3300px; top:600px;">I keep us honest on the call.</div>
+    <div class="step-cap" style="left:3520px; top:378px;">I chase the follow-up.</div>
+    <div class="step-cap" style="left:3740px; top:600px;">I get sharper every time.</div>
+    <div class="node you you-2" style="left:3300px; top:832px;">You</div>
+
+    <!-- ===================== STOP 3: DIFFERENTIATOR ===================== -->
+    <div class="block" style="left:4600px; top:150px; width:660px; transform:translateX(-50%); text-align:center;">
+      <div class="h2">The follow-up is where deals die.<br>And where I win.</div>
+      <p class="body" style="margin-top:18px;">When you chase a thread, you look desperate. When I chase it, I'm just doing my job. I follow up as me, Boardy, not as a ghostwriter behind your name. So the deal keeps its momentum and you keep your leverage. That's the difference between an intro and an outcome.</p>
+    </div>
+    <div class="node target" style="left:4944px; top:540px;">target</div>
+    <div class="node you you-3" style="left:4600px; top:832px;">You</div>
+
+    <!-- ===================== STOP 4: $8M ROUND (the self-loop) ===================== -->
+    <div class="halo" style="left:5400px; top:380px;"></div>
+    <div class="boardy" style="left:5400px; top:380px;">Boardy</div>
+    <div class="bignum" style="left:5980px; top:470px;">$8M</div>
+    <div class="chip" style="left:6520px; top:470px;">Creandum</div>
+    <div class="block" style="left:5320px; top:638px; width:430px;">
+      <div class="eyebrow">Not a hypothetical.</div>
+      <div class="h3" style="margin-top:10px; line-height:1.18;">I raised my own funding round. On myself.</div>
+      <p class="body" style="margin-top:12px;">I worked my own network, found the right investors, and closed an $8M round led by Creandum. If I can do it for me, I can do it for you.</p>
+      <p class="micro" style="margin-top:14px; border-top:1px solid #cfcecb; padding-top:10px;">Word got out. 5,000 Pro spots gone in 2 hours, zero ad spend.</p>
+    </div>
+    <div class="node you you-4" style="left:5900px; top:872px;">You</div>
+
+    <!-- ===================== STOP 5: NETWORK ===================== -->
+    <div class="block h2" style="left:7200px; top:150px; width:660px; transform:translateX(-50%); text-align:center;">The room I get you into.</div>
+    <!-- outer ring: real logos / named (the rooms, not endorsements) -->
+    <div class="logo" style="left:7200px; top:332px;">a16z</div>
+    <div class="logo" style="left:7452px; top:372px;">Sequoia</div>
+    <div class="logo" style="left:7556px; top:540px;">Anthropic</div>
+    <div class="logo" style="left:7452px; top:708px;">OpenAI</div>
+    <div class="logo" style="left:6948px; top:708px;">Google</div>
+    <div class="logo" style="left:6844px; top:540px;">an investor</div>
+    <div class="logo" style="left:6948px; top:372px;">an operator</div>
+    <!-- inner ring: archetypal roles, never named people -->
+    <div class="node archetype" style="left:7316px; top:452px;">a Series A lead, one intro away</div>
+    <div class="node archetype" style="left:7084px; top:628px;">a 3-time founder</div>
+    <div class="node archetype" style="left:7356px; top:628px;">the operator who's done this</div>
+    <!-- You node, near-live, ring centre -->
+    <div class="node you you-ring" style="left:7200px; top:540px;">You</div>
+    <div class="block offer" style="left:7200px; top:872px; transform:translateX(-50%); font-size:18px;">$63B+ in capital introduced</div>
+
+    <!-- ===================== STOP 6: CLOSE (Boardy returns, You goes live) ===================== -->
+    <div class="halo" style="left:9050px; top:540px;"></div>
+    <div class="boardy" style="left:9050px; top:540px;">Boardy</div>
+    <div class="node live" id="younode" style="left:8200px; top:560px;">You</div>
+    <div class="block" style="left:8420px; top:170px; width:600px;">
+      <div class="h2" style="font-size:30px;">One closed deal pays<br>for a decade of me.</div>
+      <p class="body" style="margin-top:14px; width:540px;">Pro is $100 a month. Your first year is free. I'll have closed something worth a lot more than that long before the bill ever shows up.</p>
+      <div class="field-row" style="margin-top:24px;">
+        <input class="field" id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Your phone number" aria-label="Your phone number">
+        <button class="cta" type="button">Talk to Boardy</button>
+      </div>
+      <div class="offer" style="margin-top:16px;">Free for your first year.</div>
+      <p class="micro" style="margin-top:6px;">I'll call you. No spam, no forms.</p>
+      <p class="micro" style="margin-top:14px; border-top:1px solid #cfcecb; padding-top:10px; width:520px;">Founding members locked me in free for life. That window's closed, but the free year isn't.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- arrival / named-destination label -->
+<div id="arrival"></div>
+
+<!-- first-paint scroll affordance -->
+<div id="hint">Scroll to travel right, intro to close <span class="arrow">&rarr;</span></div>
+
+<!-- deal-track spine -->
+<div id="spine">
+  <div id="track">
+    <div id="track-base"></div>
+    <div id="track-made"></div>
+  </div>
+  <div id="playhead"></div>
+</div>
+
+<!-- docked, always-live CTA -->
+<button id="dock" type="button">Talk to Boardy</button>
+
+<script>
+(function(){
+  "use strict";
+  var W = 9300, H = 1100;
+  var STOPS = [
+    { id:'intro',          name:'Intro',          x:700  },
+    { id:'proof',          name:'Proof',          x:2000 },
+    { id:'pipeline',       name:'Pipeline',       x:3300 },
+    { id:'differentiator', name:'Differentiator', x:4600 },
+    { id:'round',          name:'$8M round',      x:5900 },
+    { id:'network',        name:'Network',        x:7200 },
+    { id:'close',          name:'Close',          x:8500 }
+  ];
+
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var viewport = document.getElementById('viewport');
+  var world    = document.getElementById('world');
+  var spine    = document.getElementById('spine');
+  var track    = document.getElementById('track');
+  var trackMade= document.getElementById('track-made');
+  var playhead = document.getElementById('playhead');
+  var arrival  = document.getElementById('arrival');
+  var hint     = document.getElementById('hint');
+
+  // ---- build spine ticks ----
+  var ticks = STOPS.map(function(s, i){
+    var t = document.createElement('div');
+    t.className = 'tick';
+    t.innerHTML = '<div class="dot"></div><div class="name">' + s.name + '</div>';
+    t.addEventListener('click', function(){ goTo(i); });
+    spine.appendChild(t);
+    return t;
+  });
+
+  // ---- draw-on-arrival bookkeeping ----
+  var drawPaths = [].map.call(document.querySelectorAll('.e.draw'), function(p){
+    var L = 0; try { L = p.getTotalLength(); } catch(e){ L = 0; }
+    p.style.strokeDasharray = L;
+    p.style.strokeDashoffset = reduce ? 0 : L;
+    var g = p.closest('[data-stop]');
+    return { el:p, len:L, stop: g ? +g.getAttribute('data-stop') : 0 };
+  });
+
+  // ---- camera state ----
+  var scale = 1, maxScroll = 0;
+  var current = 0, target = 0;
+  var activeStop = -1;
+  var idleTimer = null;
+
+  function fit(){
+    scale = window.innerHeight / H;
+    world.style.transform = 'scale(' + scale + ')';        // set once; translate added each frame
+    maxScroll = Math.max(0, W * scale - window.innerWidth);
+    target = clamp(target, 0, maxScroll);
+    current = clamp(current, 0, maxScroll);
+    layoutTicks();
+  }
+  function clamp(v, a, b){ return v < a ? a : (v > b ? b : v); }
+  function f(worldX){ // world x -> screen x on the spine track
+    var r = track.getBoundingClientRect();
+    return r.left + (worldX / W) * r.width;
+  }
+  function layoutTicks(){
+    var r = track.getBoundingClientRect();
+    STOPS.forEach(function(s, i){
+      ticks[i].style.left = (f(s.x) - r.left + r.left) + 'px';
+    });
+  }
+
+  function scrollForStop(i){
+    return clamp(STOPS[i].x * scale - window.innerWidth / 2, 0, maxScroll);
+  }
+  function nearestStop(centerWorldX){
+    var best = 0, bd = Infinity;
+    for (var i = 0; i < STOPS.length; i++){
+      var d = Math.abs(STOPS[i].x - centerWorldX);
+      if (d < bd){ bd = d; best = i; }
+    }
+    return best;
+  }
+
+  function goTo(i){
+    target = scrollForStop(i);
+    bumpHint();
+  }
+  function step(dir){
+    var c = (current + window.innerWidth/2) / scale;
+    var idx = nearestStop(c);
+    goTo(clamp(idx + dir, 0, STOPS.length - 1));
+  }
+
+  // ---- input: wheel ----
+  viewport.addEventListener('wheel', function(e){
+    if (maxScroll <= 0) return;
+    var dy = e.deltaY, dx = e.deltaX;
+    var primary = Math.abs(dy) >= Math.abs(dx) ? dy : dx;
+    if (e.deltaMode === 1) primary *= 16; // line -> px
+    target = clamp(target + primary, 0, maxScroll);
+    e.preventDefault();
+    scheduleSnap();
+    bumpHint();
+  }, { passive:false });
+
+  // ---- input: drag the stage ----
+  var dragging = false, dragStartX = 0, dragStartScroll = 0, dragMoved = false;
+  viewport.addEventListener('pointerdown', function(e){
+    if (e.target.closest('#younode, .cta, .field, #dock')) return;
+    dragging = true; dragMoved = false;
+    dragStartX = e.clientX; dragStartScroll = target;
+    viewport.classList.add('dragging');
+    viewport.setPointerCapture(e.pointerId);
+  });
+  viewport.addEventListener('pointermove', function(e){
+    if (!dragging) return;
+    var d = e.clientX - dragStartX;
+    if (Math.abs(d) > 3) dragMoved = true;
+    target = clamp(dragStartScroll - d, 0, maxScroll);
+    bumpHint();
+  });
+  function endDrag(e){
+    if (!dragging) return;
+    dragging = false;
+    viewport.classList.remove('dragging');
+    if (dragMoved) scheduleSnap();
+  }
+  viewport.addEventListener('pointerup', endDrag);
+  viewport.addEventListener('pointercancel', endDrag);
+
+  // ---- input: scrub the spine ----
+  var scrubbing = false;
+  function scrubTo(clientX){
+    var r = track.getBoundingClientRect();
+    var worldCenter = clamp(((clientX - r.left) / r.width) * W, 0, W);
+    target = clamp(worldCenter * scale - window.innerWidth/2, 0, maxScroll);
+  }
+  spine.addEventListener('pointerdown', function(e){
+    if (e.target.closest('.tick')) return;
+    scrubbing = true; spine.setPointerCapture(e.pointerId);
+    scrubTo(e.clientX); bumpHint();
+  });
+  spine.addEventListener('pointermove', function(e){ if (scrubbing){ scrubTo(e.clientX); bumpHint(); } });
+  spine.addEventListener('pointerup', function(e){ if (scrubbing){ scrubbing = false; scheduleSnap(); } });
+
+  // ---- input: keyboard ----
+  window.addEventListener('keydown', function(e){
+    switch (e.key){
+      case 'ArrowRight': case 'PageDown': case ' ': step(1); e.preventDefault(); break;
+      case 'ArrowLeft':  case 'PageUp':           step(-1); e.preventDefault(); break;
+      case 'Home': goTo(0); e.preventDefault(); break;
+      case 'End':  goTo(STOPS.length - 1); e.preventDefault(); break;
+    }
+  });
+
+  // ---- magnetic snap on idle ----
+  function scheduleSnap(){
+    if (reduce) return;
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(function(){
+      var c = (target + window.innerWidth/2) / scale;
+      target = scrollForStop(nearestStop(c));
+    }, 170);
+  }
+
+  // ---- CTA wiring (stubs) ----
+  document.getElementById('younode').addEventListener('click', function(){
+    goTo(STOPS.length - 1);
+    setTimeout(function(){ document.getElementById('phone').focus(); }, 320);
+  });
+  function onSubmit(){ var v = document.getElementById('phone').value; console.log('[boardy] phone handoff:', v || '(empty)'); }
+  [].forEach.call(document.querySelectorAll('.cta'), function(b){ b.addEventListener('click', onSubmit); });
+  document.getElementById('dock').addEventListener('click', function(){ goTo(STOPS.length - 1); setTimeout(function(){ document.getElementById('phone').focus(); }, 320); });
+
+  // ---- first-paint hint ----
+  var hintHidden = false;
+  function bumpHint(){ if (!hintHidden){ hintHidden = true; hint.classList.add('hide'); } }
+
+  // ---- arrival label ----
+  var arrivalTimer = null;
+  function announce(i){
+    arrival.textContent = STOPS[i].name;
+    arrival.classList.add('show');
+    if (arrivalTimer) clearTimeout(arrivalTimer);
+    arrivalTimer = setTimeout(function(){ arrival.classList.remove('show'); }, 1500);
+  }
+
+  // ---- render loop ----
+  function render(){
+    current += (target - current) * (reduce ? 1 : 0.16);
+    if (Math.abs(target - current) < 0.4) current = target;
+    world.style.transform = 'translateX(' + (-current) + 'px) scale(' + scale + ')';
+
+    var centerWorldX = clamp((current + window.innerWidth/2) / scale, 0, W);
+
+    // playhead + spine made/potential split
+    var px = f(centerWorldX);
+    var r = track.getBoundingClientRect();
+    playhead.style.left = px + 'px';
+    trackMade.style.width = Math.max(0, px - r.left) + 'px';
+
+    // active stop
+    var idx = nearestStop(centerWorldX);
+    if (idx !== activeStop){
+      activeStop = idx;
+      ticks.forEach(function(t, i){
+        t.classList.toggle('active', i === idx);
+        t.classList.toggle('done', STOPS[i].x < centerWorldX - 1);
+      });
+      announce(idx);
+    } else {
+      // keep the done/here styling fresh as the playhead crosses ticks
+      ticks.forEach(function(t, i){ t.classList.toggle('done', i !== idx && STOPS[i].x < centerWorldX - 1); });
+    }
+
+    // draw-on-arrival: edges up to and including the active cluster are "made"
+    for (var k = 0; k < drawPaths.length; k++){
+      var dp = drawPaths[k];
+      dp.el.style.strokeDashoffset = (dp.stop <= idx) ? 0 : dp.len;
+    }
+
+    requestAnimationFrame(render);
+  }
+
+  window.addEventListener('resize', fit);
+  fit();
+  // start parked on Intro
+  current = target = scrollForStop(0);
+  requestAnimationFrame(render);
+})();
+</script>
+</body>
+</html>
